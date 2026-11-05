@@ -1,1 +1,850 @@
 
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PhotoClean AI - Google Photos Organizer & Cleaner</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        google: {
+                            blue: '#1a73e8',
+                            blueHover: '#1557b0',
+                            red: '#ea4335',
+                            yellow: '#fbbc05',
+                            green: '#34a853',
+                            darkBg: '#121212',
+                            darkCard: '#1e1e1e',
+                            darkBorder: '#333333'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'Roboto', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Google Fonts & Font Awesome Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.05);
+        }
+        .dark ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.05);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+        .dark ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+        }
+        /* Glassmorphism Effect */
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .dark .glass {
+            background: rgba(30, 30, 30, 0.75);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 dark:bg-google-darkBg dark:text-gray-100 min-h-screen flex flex-col">
+
+    <!-- Toast Notification -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 flex items-center p-4 mb-4 text-gray-500 bg-white rounded-lg shadow dark:text-gray-400 dark:bg-gray-800 border dark:border-gray-700 max-w-xs sm:max-w-md">
+        <div id="toast-icon" class="inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg"></div>
+        <div id="toast-message" class="ml-3 text-sm font-normal"></div>
+    </div>
+
+    <!-- HEADER / NAVBAR -->
+    <header class="sticky top-0 z-40 w-full glass border-b border-gray-200 dark:border-google-darkBorder">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                
+                <!-- Logo & Title -->
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 via-red-500 to-yellow-500 p-0.5 shadow-md flex items-center justify-center">
+                        <div class="w-full h-full bg-white dark:bg-gray-900 rounded-[10px] flex items-center justify-center">
+                            <i class="fa-solid font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-red-500 fa-images text-xl"></i>
+                        </div>
+                    </div>
+                    <div>
+                        <span class="font-bold text-lg sm:text-xl tracking-tight">PhotoClean <span class="text-google-blue">AI</span></span>
+                        <span class="hidden sm:inline-block text-xs text-gray-500 dark:text-gray-400 border-l border-gray-300 dark:border-gray-700 ml-2 pl-2">Google Photos Organizer</span>
+                    </div>
+                </div>
+
+                <!-- Status & Action Buttons -->
+                <div class="flex items-center space-x-3">
+                    
+                    <!-- Connection Status Badge -->
+                    <div id="status-badge" class="flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300">
+                        <span class="w-2 h-2 rounded-full bg-gray-400 mr-2" id="status-dot"></span>
+                        <span id="status-text">Desconectado</span>
+                    </div>
+
+                    <!-- Theme Toggle Button -->
+                    <button id="theme-toggle" class="p-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 focus:outline-none transition">
+                        <i id="theme-icon" class="fa-solid fa-moon text-lg"></i>
+                    </button>
+
+                    <!-- GitHub Repo Link -->
+                    <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="p-2.5 text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition" title="Ver no GitHub">
+                        <i class="fa-brands fa-github text-xl"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
+
+        <!-- HERO BANNER -->
+        <section class="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-700 text-white p-6 sm:p-10 shadow-xl">
+            <div class="relative z-10 max-w-2xl space-y-4">
+                <span class="inline-block px-3 py-1 bg-white/20 backdrop-blur-md rounded-full text-xs font-semibold tracking-wider uppercase">
+                    Projeto Open Source / Estudantil
+                </span>
+                <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight leading-tight">
+                    Organize seu Google Fotos e Elimine Duplicatas Automaticamente
+                </h1>
+                <p class="text-blue-100 text-sm sm:text-base">
+                    Conecte sua conta do Google Fotos para verificação periódica de cópias repetidas, organização inteligente por datas/eventos e proteção de fotos em pastas seguras antes da limpeza.
+                </p>
+                <div class="pt-2 flex flex-wrap gap-3">
+                    <a href="#auth-section" class="px-5 py-2.5 bg-white text-google-blue hover:bg-blue-50 rounded-xl font-semibold text-sm transition shadow-md flex items-center space-x-2">
+                        <i class="fa-brands fa-google"></i>
+                        <span>Começar Conexão</span>
+                    </a>
+                    <a href="#how-it-works" class="px-5 py-2.5 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white border border-white/30 rounded-xl font-semibold text-sm transition flex items-center space-x-2">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Como Funciona</span>
+                    </a>
+                </div>
+            </div>
+            <!-- Decorative Background Graphic -->
+            <div class="absolute -right-10 -bottom-10 opacity-20 pointer-events-none hidden md:block">
+                <i class="fa-solid fa-images text-[280px]"></i>
+            </div>
+        </section>
+
+        <!-- AUTHENTICATION & CONFIG SECTION -->
+        <section id="auth-section" class="bg-white dark:bg-google-darkCard rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-google-darkBorder">
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                <div class="space-y-1">
+                    <h2 class="text-lg font-bold flex items-center space-x-2">
+                        <i class="fa-solid fa-key text-google-blue"></i>
+                        <span>Configuração da API do Google Fotos</span>
+                    </h2>
+                    <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                        Insira seu <strong>Client ID</strong> gerado no Google Cloud Console. Suas credenciais são mantidas apenas no seu navegador (<code class="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">localStorage</code>).
+                    </p>
+                </div>
+
+                <div class="w-full md:w-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <div class="relative flex-grow">
+                        <input type="text" id="client-id-input" placeholder="SEU_CLIENT_ID.apps.googleusercontent.com" 
+                            class="w-full sm:w-80 px-4 py-2.5 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 focus:ring-2 focus:ring-google-blue focus:outline-none transition">
+                    </div>
+                    <button id="btn-connect" onclick="simulateGoogleLogin()" class="px-6 py-2.5 bg-google-blue hover:bg-google-blueHover text-white font-medium text-sm rounded-xl shadow-md transition flex items-center justify-center space-x-2 whitespace-nowrap">
+                        <i class="fa-brands fa-google"></i>
+                        <span id="btn-connect-text">Conectar Google Fotos</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- DASHBOARD & ALERT SECTION -->
+        <section class="space-y-6">
+            
+            <!-- ALERT / COUNTDOWN BANNER -->
+            <div id="alert-timer-box" class="bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-red-500/10 border border-amber-500/30 rounded-2xl p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div class="flex items-start space-x-4">
+                    <div class="p-3 bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-xl mt-1 md:mt-0 flex-shrink-0">
+                        <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-amber-800 dark:text-amber-300 text-base">
+                            Fotos duplicadas pendentes de revisão!
+                        </h3>
+                        <p class="text-xs sm:text-sm text-gray-600 dark:text-gray-300 mt-0.5">
+                            Você tem fotos repetidas identificadas. Elas serão marcadas para limpeza manual em:
+                        </p>
+                        <!-- Countdown Timer -->
+                        <div class="mt-2 flex items-center space-x-2 font-mono font-bold text-lg text-amber-600 dark:text-amber-400" id="timer-display">
+                            <span class="bg-amber-100 dark:bg-amber-950/80 px-2.5 py-1 rounded-md" id="timer-hours">06</span>:
+                            <span class="bg-amber-100 dark:bg-amber-950/80 px-2.5 py-1 rounded-md" id="timer-minutes">23</span>:
+                            <span class="bg-amber-100 dark:bg-amber-950/80 px-2.5 py-1 rounded-md" id="timer-seconds">59</span>
+                        </div>
+                    </div>
+                </div>
+                <button onclick="moveToSafeFolderAll()" class="w-full md:w-auto px-5 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-medium text-sm transition shadow-sm flex items-center justify-center space-x-2">
+                    <i class="fa-solid fa-folder-plus"></i>
+                    <span>Mover Todas para Pasta Segura</span>
+                </button>
+            </div>
+
+            <!-- STATS CARDS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Stat 1 -->
+                <div class="bg-white dark:bg-google-darkCard p-5 rounded-2xl border border-gray-200 dark:border-google-darkBorder shadow-sm flex items-center space-x-4">
+                    <div class="p-3.5 rounded-xl bg-blue-50 dark:bg-blue-900/30 text-google-blue">
+                        <i class="fa-solid fa-images text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Fotos Analisadas</p>
+                        <h4 class="text-2xl font-extrabold" id="stat-total">1,248</h4>
+                    </div>
+                </div>
+                <!-- Stat 2 -->
+                <div class="bg-white dark:bg-google-darkCard p-5 rounded-2xl border border-gray-200 dark:border-google-darkBorder shadow-sm flex items-center space-x-4">
+                    <div class="p-3.5 rounded-xl bg-amber-50 dark:bg-amber-900/30 text-amber-500">
+                        <i class="fa-solid fa-clone text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Duplicatas Encontradas</p>
+                        <h4 class="text-2xl font-extrabold text-amber-500" id="stat-duplicates">3</h4>
+                    </div>
+                </div>
+                <!-- Stat 3 -->
+                <div class="bg-white dark:bg-google-darkCard p-5 rounded-2xl border border-gray-200 dark:border-google-darkBorder shadow-sm flex items-center space-x-4">
+                    <div class="p-3.5 rounded-xl bg-emerald-50 dark:bg-emerald-900/30 text-emerald-500">
+                        <i class="fa-solid fa-hard-drive text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Espaço Recuperável</p>
+                        <h4 class="text-2xl font-extrabold text-emerald-500" id="stat-space">24.5 MB</h4>
+                    </div>
+                </div>
+                <!-- Stat 4 -->
+                <div class="bg-white dark:bg-google-darkCard p-5 rounded-2xl border border-gray-200 dark:border-google-darkBorder shadow-sm flex items-center space-x-4">
+                    <div class="p-3.5 rounded-xl bg-purple-50 dark:bg-purple-900/30 text-purple-500">
+                        <i class="fa-solid fa-folder-tree text-2xl"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Álbuns Criados</p>
+                        <h4 class="text-2xl font-extrabold" id="stat-albums">12</h4>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- MAIN TABS SECTION -->
+        <section class="bg-white dark:bg-google-darkCard rounded-2xl border border-gray-200 dark:border-google-darkBorder shadow-sm overflow-hidden">
+            
+            <!-- Tab Headers -->
+            <div class="flex border-b border-gray-200 dark:border-google-darkBorder overflow-x-auto bg-gray-50/50 dark:bg-gray-900/50">
+                <button onclick="switchTab('tab-duplicates')" id="btn-tab-duplicates" class="tab-btn active px-6 py-4 font-medium text-sm border-b-2 border-google-blue text-google-blue flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-copy"></i>
+                    <span>Fotos Duplicadas Detectadas</span>
+                    <span id="badge-duplicates-count" class="bg-amber-500 text-white text-xs px-2 py-0.5 rounded-full font-bold">3</span>
+                </button>
+                <button onclick="switchTab('tab-categories')" id="btn-tab-categories" class="tab-btn px-6 py-4 font-medium text-sm text-gray-500 dark:text-gray-400 border-b-2 border-transparent hover:text-gray-700 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-folder-open"></i>
+                    <span>Categorização Automática (Álbuns)</span>
+                </button>
+                <button onclick="switchTab('tab-settings')" id="btn-tab-settings" class="tab-btn px-6 py-4 font-medium text-sm text-gray-500 dark:text-gray-400 border-b-2 border-transparent hover:text-gray-700 dark:hover:text-gray-200 flex items-center space-x-2 whitespace-nowrap">
+                    <i class="fa-solid fa-sliders"></i>
+                    <span>Agendamento & Regras</span>
+                </button>
+            </div>
+
+            <!-- TAB CONTENT 1: DUPLICATES -->
+            <div id="tab-duplicates" class="tab-content p-6 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-base">Comparação de Duplicatas (Hash de Imagem & Metadados)</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Escolha qual versão manter ou mova a duplicata para a pasta de revisão segura.</p>
+                    </div>
+                    <button onclick="triggerScan()" class="px-4 py-2 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-xs font-semibold rounded-xl transition flex items-center space-x-2">
+                        <i class="fa-solid fa-rotate-right" id="scan-icon"></i>
+                        <span>Executar Nova Varredura</span>
+                    </button>
+                </div>
+
+                <!-- Duplicates Grid Container -->
+                <div class="space-y-4" id="duplicates-container">
+                    
+                    <!-- Duplicate Item 1 -->
+                    <div class="duplicate-card bg-gray-50 dark:bg-gray-900/60 p-4 rounded-xl border border-gray-200 dark:border-gray-800 transition">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded-md">
+                                <i class="fa-solid fa-check-circle mr-1"></i> Similaridade: 99.8% (Cópia Exata)
+                            </span>
+                            <span class="text-xs text-gray-500">ID do Par: #DUP-8821</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Photo Original -->
+                            <div class="relative bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex space-x-3 items-center">
+                                <img src="https://placehold.co/120x120/1e293b/ffffff?text=Praia+Original" alt="Original" class="w-20 h-20 object-cover rounded-md flex-shrink-0">
+                                <div class="space-y-1 text-xs">
+                                    <span class="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold rounded">Original</span>
+                                    <p class="font-medium text-gray-800 dark:text-gray-200">IMG_20241012_1430.jpg</p>
+                                    <p class="text-gray-500">Data: 12/10/2024 - 14:30</p>
+                                    <p class="text-gray-500">Tamanho: 4.2 MB (4000x3000)</p>
+                                </div>
+                            </div>
+
+                            <!-- Photo Duplicate -->
+                            <div class="relative bg-white dark:bg-gray-800 p-3 rounded-lg border border-amber-300 dark:border-amber-700/50 flex space-x-3 items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <img src="https://placehold.co/120x120/334155/ffffff?text=Praia+Copia" alt="Cópia" class="w-20 h-20 object-cover rounded-md flex-shrink-0">
+                                    <div class="space-y-1 text-xs">
+                                        <span class="inline-block px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold rounded">Duplicata</span>
+                                        <p class="font-medium text-gray-800 dark:text-gray-200">IMG_20241012_1430(1).jpg</p>
+                                        <p class="text-gray-500">Data: 12/10/2024 - 14:31</p>
+                                        <p class="text-gray-500">Tamanho: 4.2 MB (4000x3000)</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col space-y-2">
+                                    <button onclick="resolveDuplicate(this, 'move')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-md transition shadow-sm" title="Mover para pasta segura">
+                                        Mover
+                                    </button>
+                                    <button onclick="resolveDuplicate(this, 'ignore')" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold rounded-md transition" title="Ignorar este par">
+                                        Ignorar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Duplicate Item 2 -->
+                    <div class="duplicate-card bg-gray-50 dark:bg-gray-900/60 p-4 rounded-xl border border-gray-200 dark:border-gray-800 transition">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300 rounded-md">
+                                <i class="fa-solid fa-eye mr-1"></i> Similaridade: 94.5% (Ângulo Semelhante)
+                            </span>
+                            <span class="text-xs text-gray-500">ID do Par: #DUP-8822</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Photo Original -->
+                            <div class="relative bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex space-x-3 items-center">
+                                <img src="https://placehold.co/120x120/0f172a/ffffff?text=Aniversario+1" alt="Original" class="w-20 h-20 object-cover rounded-md flex-shrink-0">
+                                <div class="space-y-1 text-xs">
+                                    <span class="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold rounded">Manter Principal</span>
+                                    <p class="font-medium text-gray-800 dark:text-gray-200">DSC_0042.jpg</p>
+                                    <p class="text-gray-500">Data: 05/08/2024 - 20:15</p>
+                                    <p class="text-gray-500">Tamanho: 8.1 MB</p>
+                                </div>
+                            </div>
+
+                            <!-- Photo Duplicate -->
+                            <div class="relative bg-white dark:bg-gray-800 p-3 rounded-lg border border-amber-300 dark:border-amber-700/50 flex space-x-3 items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <img src="https://placehold.co/120x120/1e1b4b/ffffff?text=Aniversario+2" alt="Cópia" class="w-20 h-20 object-cover rounded-md flex-shrink-0">
+                                    <div class="space-y-1 text-xs">
+                                        <span class="inline-block px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold rounded">Duplicata</span>
+                                        <p class="font-medium text-gray-800 dark:text-gray-200">DSC_0043.jpg</p>
+                                        <p class="text-gray-500">Data: 05/08/2024 - 20:15</p>
+                                        <p class="text-gray-500">Tamanho: 7.9 MB</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col space-y-2">
+                                    <button onclick="resolveDuplicate(this, 'move')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-md transition shadow-sm">
+                                        Mover
+                                    </button>
+                                    <button onclick="resolveDuplicate(this, 'ignore')" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold rounded-md transition">
+                                        Ignorar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Duplicate Item 3 -->
+                    <div class="duplicate-card bg-gray-50 dark:bg-gray-900/60 p-4 rounded-xl border border-gray-200 dark:border-gray-800 transition">
+                        <div class="flex items-center justify-between mb-3">
+                            <span class="text-xs font-semibold px-2.5 py-1 bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 rounded-md">
+                                <i class="fa-solid fa-check-circle mr-1"></i> Similaridade: 100% (MD5 Identico)
+                            </span>
+                            <span class="text-xs text-gray-500">ID do Par: #DUP-8823</span>
+                        </div>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- Photo Original -->
+                            <div class="relative bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-200 dark:border-gray-700 flex space-x-3 items-center">
+                                <img src="https://placehold.co/120x120/064e3b/ffffff?text=Documento" alt="Original" class="w-20 h-20 object-cover rounded-md flex-shrink-0">
+                                <div class="space-y-1 text-xs">
+                                    <span class="inline-block px-1.5 py-0.5 bg-blue-100 dark:bg-blue-900/60 text-blue-700 dark:text-blue-300 font-bold rounded">Original</span>
+                                    <p class="font-medium text-gray-800 dark:text-gray-200">DOC_SCAN_01.jpg</p>
+                                    <p class="text-gray-500">Data: 01/01/2024 - 10:00</p>
+                                    <p class="text-gray-500">Tamanho: 1.2 MB</p>
+                                </div>
+                            </div>
+
+                            <!-- Photo Duplicate -->
+                            <div class="relative bg-white dark:bg-gray-800 p-3 rounded-lg border border-amber-300 dark:border-amber-700/50 flex space-x-3 items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <img src="https://placehold.co/120x120/064e3b/ffffff?text=Documento+Copia" alt="Cópia" class="w-20 h-20 object-cover rounded-md flex-shrink-0">
+                                    <div class="space-y-1 text-xs">
+                                        <span class="inline-block px-1.5 py-0.5 bg-amber-100 dark:bg-amber-900/60 text-amber-700 dark:text-amber-300 font-bold rounded">Duplicata</span>
+                                        <p class="font-medium text-gray-800 dark:text-gray-200">DOC_SCAN_01_copy.jpg</p>
+                                        <p class="text-gray-500">Data: 01/01/2024 - 10:05</p>
+                                        <p class="text-gray-500">Tamanho: 1.2 MB</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-col space-y-2">
+                                    <button onclick="resolveDuplicate(this, 'move')" class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold rounded-md transition shadow-sm">
+                                        Mover
+                                    </button>
+                                    <button onclick="resolveDuplicate(this, 'ignore')" class="px-3 py-1.5 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-xs font-semibold rounded-md transition">
+                                        Ignorar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 2: CATEGORIZATION -->
+            <div id="tab-categories" class="tab-content hidden p-6 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div>
+                        <h3 class="font-bold text-base">Organização Automática por Álbuns & Eventos</h3>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">O sistema cria álbuns estruturados por ano, mês ou eventos especiais (ex: Viagens, Festas).</p>
+                    </div>
+                    <button onclick="createSampleAlbum()" class="px-4 py-2 bg-google-blue text-white text-xs font-semibold rounded-xl hover:bg-google-blueHover transition flex items-center space-x-2">
+                        <i class="fa-solid fa-folder-plus"></i>
+                        <span>Criar Novo Álbum Automático</span>
+                    </button>
+                </div>
+
+                <!-- Albums Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" id="albums-grid">
+                    
+                    <!-- Album 1 -->
+                    <div class="group bg-gray-50 dark:bg-gray-900/60 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-md transition">
+                        <div class="h-32 bg-gray-200 dark:bg-gray-800 relative overflow-hidden">
+                            <img src="https://placehold.co/400x200/1e293b/ffffff?text=Ferias+2024" alt="Ferias" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <span class="absolute top-2 right-2 px-2 py-0.5 bg-black/60 backdrop-blur-md text-white text-[10px] rounded-md">48 fotos</span>
+                        </div>
+                        <div class="p-3">
+                            <h4 class="font-bold text-sm truncate">🏖️ Férias de Verão 2024</h4>
+                            <p class="text-xs text-gray-500 mt-0.5">Criado em: Jan/2024</p>
+                        </div>
+                    </div>
+
+                    <!-- Album 2 -->
+                    <div class="group bg-gray-50 dark:bg-gray-900/60 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-md transition">
+                        <div class="h-32 bg-gray-200 dark:bg-gray-800 relative overflow-hidden">
+                            <img src="https://placehold.co/400x200/312e81/ffffff?text=Aniversarios" alt="Aniversários" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <span class="absolute top-2 right-2 px-2 py-0.5 bg-black/60 backdrop-blur-md text-white text-[10px] rounded-md">112 fotos</span>
+                        </div>
+                        <div class="p-3">
+                            <h4 class="font-bold text-sm truncate">🎂 Aniversários & Festas</h4>
+                            <p class="text-xs text-gray-500 mt-0.5">Criado em: Ago/2024</p>
+                        </div>
+                    </div>
+
+                    <!-- Album 3 (Folder for Duplicates) -->
+                    <div class="group bg-amber-500/10 rounded-xl overflow-hidden border border-amber-500/30 hover:shadow-md transition">
+                        <div class="h-32 bg-amber-900/20 relative flex items-center justify-center">
+                            <i class="fa-solid fa-shield-halved text-4xl text-amber-500"></i>
+                            <span class="absolute top-2 right-2 px-2 py-0.5 bg-amber-500 text-white text-[10px] font-bold rounded-md">Pasta Segura</span>
+                        </div>
+                        <div class="p-3">
+                            <h4 class="font-bold text-sm text-amber-800 dark:text-amber-300 truncate">📁 [Revisão] Fotos Repetidas</h4>
+                            <p class="text-xs text-gray-500 mt-0.5">Aguardando decisão</p>
+                        </div>
+                    </div>
+
+                    <!-- Album 4 -->
+                    <div class="group bg-gray-50 dark:bg-gray-900/60 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-md transition">
+                        <div class="h-32 bg-gray-200 dark:bg-gray-800 relative overflow-hidden">
+                            <img src="https://placehold.co/400x200/065f46/ffffff?text=Documentos" alt="Documentos" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                            <span class="absolute top-2 right-2 px-2 py-0.5 bg-black/60 backdrop-blur-md text-white text-[10px] rounded-md">15 fotos</span>
+                        </div>
+                        <div class="p-3">
+                            <h4 class="font-bold text-sm truncate">📄 Documentos & Scans</h4>
+                            <p class="text-xs text-gray-500 mt-0.5">Organização por AI</p>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- TAB CONTENT 3: SETTINGS -->
+            <div id="tab-settings" class="tab-content hidden p-6 space-y-6">
+                <div>
+                    <h3 class="font-bold text-base">Agendamento de Varreduras & Regras de Limpeza</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Ajuste como a verificação periódica deve funcionar em segundo plano.</p>
+                </div>
+
+                <div class="max-w-xl space-y-5">
+                    <!-- Option 1: Interval -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-gray-700 dark:text-gray-300 block">
+                            Frequência da Varredura Automática:
+                        </label>
+                        <select class="w-full px-4 py-2.5 text-sm rounded-xl border border-gray-300 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                            <option value="daily">Diária (Recomendado para uso intenso)</option>
+                            <option value="weekly" selected>Semanalmente</option>
+                            <option value="monthly">Mensalmente</option>
+                        </select>
+                    </div>
+
+                    <!-- Option 2: Sensitivity -->
+                    <div class="space-y-2">
+                        <label class="text-xs font-semibold text-gray-700 dark:text-gray-300 block">
+                            Nível de Sensibilidade para Duplicatas:
+                        </label>
+                        <input type="range" min="80" max="100" value="95" class="w-full accent-google-blue">
+                        <div class="flex justify-between text-[11px] text-gray-500">
+                            <span>80% (Inclui fotos parecidas)</span>
+                            <span>95% (Muito Semelhante)</span>
+                            <span>100% (Apenas Cópias Exatas)</span>
+                        </div>
+                    </div>
+
+                    <!-- Option 3: Action Rule -->
+                    <div class="space-y-3 pt-2">
+                        <label class="text-xs font-semibold text-gray-700 dark:text-gray-300 block">
+                            Regra de Ação para Fotos Duplicadas:
+                        </label>
+                        <div class="space-y-2">
+                            <label class="flex items-center space-x-3 text-xs">
+                                <input type="radio" name="rule-action" checked class="accent-google-blue">
+                                <span>Criar pasta temporária `[Revisão]` e notificar antes de agir (Seguro)</span>
+                            </label>
+                            <label class="flex items-center space-x-3 text-xs">
+                                <input type="radio" name="rule-action" class="accent-google-blue">
+                                <span>Manter apenas a foto com maior resolução e mover a outra automaticamente</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <button onclick="saveSettings()" class="px-5 py-2.5 bg-google-blue hover:bg-google-blueHover text-white text-xs font-semibold rounded-xl transition shadow-sm">
+                        Salvar Configurações
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- HOW IT WORKS SECTION (TUTORIAL) -->
+        <section id="how-it-works" class="bg-white dark:bg-google-darkCard rounded-2xl p-6 sm:p-8 border border-gray-200 dark:border-google-darkBorder shadow-sm space-y-6">
+            <div class="text-center max-w-xl mx-auto space-y-2">
+                <h2 class="text-xl font-bold">Como Funciona este Projeto?</h2>
+                <p class="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
+                    Guia simples em 4 passos para conectar e implantar seu projeto com segurança no GitHub Pages.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 pt-4">
+                <!-- Step 1 -->
+                <div class="space-y-3 text-center md:text-left">
+                    <div class="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/50 text-google-blue font-bold flex items-center justify-center mx-auto md:mx-0">
+                        1
+                    </div>
+                    <h3 class="font-bold text-sm">Google Cloud Console</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Crie um projeto no Google Cloud e ative a **Google Photos Library API**.
+                    </p>
+                </div>
+
+                <!-- Step 2 -->
+                <div class="space-y-3 text-center md:text-left">
+                    <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/50 text-amber-500 font-bold flex items-center justify-center mx-auto md:mx-0">
+                        2
+                    </div>
+                    <h3 class="font-bold text-sm">Credencial OAuth 2.0</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Gere um <strong>Client ID de Aplicação Web</strong> e adicione a URL do seu GitHub Pages em "Origens JavaScript autorizadas".
+                    </p>
+                </div>
+
+                <!-- Step 3 -->
+                <div class="space-y-3 text-center md:text-left">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/50 text-emerald-500 font-bold flex items-center justify-center mx-auto md:mx-0">
+                        3
+                    </div>
+                    <h3 class="font-bold text-sm">Varredura e Hashing</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        O app lê os metadados das fotos e compara miniaturas para localizar arquivos repetidos sem deletar nada direto da nuvem.
+                    </p>
+                </div>
+
+                <!-- Step 4 -->
+                <div class="space-y-3 text-center md:text-left">
+                    <div class="w-10 h-10 rounded-xl bg-purple-100 dark:bg-purple-900/50 text-purple-500 font-bold flex items-center justify-center mx-auto md:mx-0">
+                        4
+                    </div>
+                    <h3 class="font-bold text-sm">Deploy no GitHub</h3>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        Faça o push deste código HTML para um repositório no GitHub e ative o **GitHub Pages** nas configurações.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- FOOTER -->
+    <footer class="border-t border-gray-200 dark:border-google-darkBorder bg-white dark:bg-google-darkCard py-6 mt-12">
+        <div class="max-w-7xl mx-auto px-4 text-center sm:flex sm:justify-between sm:items-center text-xs text-gray-500 dark:text-gray-400 space-y-3 sm:space-y-0">
+            <p>© 2024 PhotoClean AI - Projeto Estudantil Open Source. Licença MIT.</p>
+            <div class="flex justify-center space-x-4">
+                <span>Desenvolvido com HTML, Tailwind CSS & JavaScript</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- INTERACTIVITY JAVASCRIPT -->
+    <script>
+        // --- 1. DARK / LIGHT THEME TOGGLE ---
+        const themeToggleBtn = document.getElementById('theme-toggle');
+        const themeIcon = document.getElementById('theme-icon');
+
+        themeToggleBtn.addEventListener('click', () => {
+            if (document.documentElement.classList.contains('dark')) {
+                document.documentElement.classList.remove('dark');
+                themeIcon.classList.replace('fa-moon', 'fa-sun');
+                localStorage.setItem('theme', 'light');
+            } else {
+                document.documentElement.classList.add('dark');
+                themeIcon.classList.replace('fa-sun', 'fa-moon');
+                localStorage.setItem('theme', 'dark');
+            }
+        });
+
+        // Load saved theme preference
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            themeIcon.classList.replace('fa-moon', 'fa-sun');
+        }
+
+        // --- 2. GOOGLE LOGIN SIMULATION & OAUTH ---
+        let isConnected = false;
+
+        function simulateGoogleLogin() {
+            const clientIdInput = document.getElementById('client-id-input').value.trim();
+            const btnText = document.getElementById('btn-connect-text');
+            const statusText = document.getElementById('status-text');
+            const statusDot = document.getElementById('status-dot');
+
+            if (!isConnected) {
+                if (clientIdInput.length < 5) {
+                    showToast('Por favor, insira um Client ID válido para simular.', 'warning');
+                    return;
+                }
+
+                // Simulate loading state
+                btnText.innerText = 'Autenticando...';
+                
+                setTimeout(() => {
+                    isConnected = true;
+                    localStorage.setItem('google_client_id', clientIdInput);
+                    
+                    btnText.innerText = 'Desconectar Conta';
+                    statusText.innerText = 'Conectado (Google)';
+                    statusDot.classList.replace('bg-gray-400', 'bg-emerald-500');
+                    
+                    showToast('Conectado com sucesso ao Google Fotos!', 'success');
+                }, 1200);
+            } else {
+                isConnected = false;
+                btnText.innerText = 'Conectar Google Fotos';
+                statusText.innerText = 'Desconectado';
+                statusDot.classList.replace('bg-emerald-500', 'bg-gray-400');
+                showToast('Conta do Google desconectada.', 'info');
+            }
+        }
+
+        // Restore saved client id if available
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedId = localStorage.getItem('google_client_id');
+            if (savedId) {
+                document.getElementById('client-id-input').value = savedId;
+            }
+        });
+
+        // --- 3. COUNTDOWN TIMER SIMULATION ---
+        let totalSeconds = (6 * 3600) + (23 * 60) + 59; // 06:23:59
+
+        function updateTimer() {
+            if (totalSeconds <= 0) return;
+            totalSeconds--;
+
+            const hrs = Math.floor(totalSeconds / 3600);
+            const mins = Math.floor((totalSeconds % 3600) / 60);
+            const secs = totalSeconds % 60;
+
+            document.getElementById('timer-hours').innerText = String(hrs).padStart(2, '0');
+            document.getElementById('timer-minutes').innerText = String(mins).padStart(2, '0');
+            document.getElementById('timer-seconds').innerText = String(secs).padStart(2, '0');
+        }
+        setInterval(updateTimer, 1000);
+
+        // --- 4. TAB SWITCHING ---
+        function switchTab(tabId) {
+            // Hide all tab contents
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            
+            // Remove active classes from buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('border-google-blue', 'text-google-blue');
+                btn.classList.add('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            });
+
+            // Show current tab
+            document.getElementById(tabId).classList.remove('hidden');
+
+            // Set active button
+            const activeBtn = document.getElementById(`btn-${tabId}`);
+            activeBtn.classList.remove('border-transparent', 'text-gray-500', 'dark:text-gray-400');
+            activeBtn.classList.add('border-google-blue', 'text-google-blue');
+        }
+
+        // --- 5. RESOLVE DUPLICATE ACTION ---
+        let currentDuplicatesCount = 3;
+
+        function resolveDuplicate(buttonElement, action) {
+            const card = buttonElement.closest('.duplicate-card');
+            
+            card.style.opacity = '0';
+            card.style.transform = 'scale(0.95)';
+            card.style.transition = 'all 0.3s ease';
+
+            setTimeout(() => {
+                card.remove();
+                currentDuplicatesCount--;
+
+                // Update Stats
+                document.getElementById('stat-duplicates').innerText = currentDuplicatesCount;
+                document.getElementById('badge-duplicates-count').innerText = currentDuplicatesCount;
+
+                if (action === 'move') {
+                    showToast('Foto duplicada movida para a Pasta Segura [Revisão]!', 'success');
+                } else {
+                    showToast('Par de fotos ignorado.', 'info');
+                }
+
+                if (currentDuplicatesCount === 0) {
+                    document.getElementById('duplicates-container').innerHTML = `
+                        <div class="text-center py-10 space-y-2">
+                            <i class="fa-solid fa-circle-check text-4xl text-emerald-500"></i>
+                            <h4 class="font-bold text-base">Nenhuma duplicata pendente!</h4>
+                            <p class="text-xs text-gray-500">Sua galeria está limpa e organizada.</p>
+                        </div>
+                    `;
+                    document.getElementById('alert-timer-box').classList.add('hidden');
+                }
+            }, 300);
+        }
+
+        function moveToSafeFolderAll() {
+            if (currentDuplicatesCount === 0) return;
+            
+            const container = document.getElementById('duplicates-container');
+            container.innerHTML = `
+                <div class="text-center py-10 space-y-2">
+                    <i class="fa-solid fa-shield-halved text-4xl text-emerald-500"></i>
+                    <h4 class="font-bold text-base">Todas as fotos foram movidas para a Pasta Segura!</h4>
+                    <p class="text-xs text-gray-500">Você pode revisá-las no seu Google Fotos no álbum "[Revisão] Fotos Repetidas".</p>
+                </div>
+            `;
+
+            currentDuplicatesCount = 0;
+            document.getElementById('stat-duplicates').innerText = '0';
+            document.getElementById('badge-duplicates-count').innerText = '0';
+            document.getElementById('alert-timer-box').classList.add('hidden');
+
+            showToast('Todas as duplicatas foram organizadas no álbum de revisão!', 'success');
+        }
+
+        function triggerScan() {
+            const scanIcon = document.getElementById('scan-icon');
+            scanIcon.classList.add('fa-spin');
+            
+            showToast('Varrendo biblioteca em busca de novas fotos duplicadas...', 'info');
+            
+            setTimeout(() => {
+                scanIcon.classList.remove('fa-spin');
+                showToast('Varredura concluída! Nenhuma nova duplicata encontrada.', 'success');
+            }, 2000);
+        }
+
+        function createSampleAlbum() {
+            const albumsGrid = document.getElementById('albums-grid');
+            const newAlbum = document.createElement('div');
+            newAlbum.className = "group bg-gray-50 dark:bg-gray-900/60 rounded-xl overflow-hidden border border-gray-200 dark:border-gray-800 hover:shadow-md transition";
+            newAlbum.innerHTML = `
+                <div class="h-32 bg-gray-200 dark:bg-gray-800 relative overflow-hidden">
+                    <img src="https://placehold.co/400x200/4338ca/ffffff?text=Novo+Album" alt="Novo Album" class="w-full h-full object-cover group-hover:scale-105 transition duration-300">
+                    <span class="absolute top-2 right-2 px-2 py-0.5 bg-black/60 backdrop-blur-md text-white text-[10px] rounded-md">12 fotos</span>
+                </div>
+                <div class="p-3">
+                    <h4 class="font-bold text-sm truncate">✨ Viagem Recente (${new Date().toLocaleDateString()})</h4>
+                    <p class="text-xs text-gray-500 mt-0.5">Criado por IA</p>
+                </div>
+            `;
+            albumsGrid.appendChild(newAlbum);
+            
+            // Update stat
+            const currentStat = parseInt(document.getElementById('stat-albums').innerText);
+            document.getElementById('stat-albums').innerText = currentStat + 1;
+
+            showToast('Novo álbum automático gerado!', 'success');
+        }
+
+        function saveSettings() {
+            showToast('Configurações de agendamento salvas com sucesso!', 'success');
+        }
+
+        // --- 6. TOAST NOTIFICATION SYSTEM ---
+        function showToast(message, type = 'info') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
+
+            toastMessage.innerText = message;
+
+            if (type === 'success') {
+                toastIcon.className = 'inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-100 text-emerald-500 dark:bg-emerald-900 dark:text-emerald-300';
+                toastIcon.innerHTML = '<i class="fa-solid fa-check"></i>';
+            } else if (type === 'warning') {
+                toastIcon.className = 'inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg bg-amber-100 text-amber-500 dark:bg-amber-900 dark:text-amber-300';
+                toastIcon.innerHTML = '<i class="fa-solid fa-exclamation"></i>';
+            } else {
+                toastIcon.className = 'inline-flex items-center justify-center flex-shrink-0 w-8 h-8 rounded-lg bg-blue-100 text-blue-500 dark:bg-blue-900 dark:text-blue-300';
+                toastIcon.innerHTML = '<i class="fa-solid fa-info"></i>';
+            }
+
+            toast.classList.remove('opacity-0', 'translate-y-20');
+            toast.classList.add('opacity-100', 'translate-y-0');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', 'translate-y-0');
+                toast.classList.add('opacity-0', 'translate-y-20');
+            }, 3500);
+        }
+    </script>
+</body>
+</html>
